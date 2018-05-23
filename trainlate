@@ -1,0 +1,68 @@
+function trainlate() {
+
+  var currentDate = new Date();
+  var weekday = currentDate.getDay();
+  var date = Utilities.formatDate( currentDate, 'Asia/Tokyo', 'M月d日 HH時mm分');
+
+  if (weekday == 0 || weekday == 6) {
+    return;
+  }
+  var calendar = CalendarApp.getCalendarById('ja.japanese#holiday@group.v.calendar.google.com');
+  if (calendar.getEventsForDay(currentDate, {max: 1}).length > 0) {
+    return;
+  }
+
+  //keihintohoku line info
+  var yahoodata = UrlFetchApp.fetch("https://transit.yahoo.co.jp/traininfo/detail/22/0/").getContentText();
+  if(yahoodata.indexOf('現在､事故･遅延に関する情報はありません') > -1){
+    // match the word
+  }else{    
+    //get error info
+    var yahoodatastart = yahoodata.indexOf('og:description" content="');
+    //4 japanese word only
+    yahoodatastart += 25;
+    var yahoodataend = yahoodata.indexOf('の情報です。');
+    var yahoodataoutput = yahoodata.substring(yahoodatastart, yahoodataend);
+
+    postMessage("\n" + "◆京浜東北線 " + date + yahoodataoutput + "\n",'your web hook');
+  }
+
+
+  //keikyuuhonsen line info
+  var yahoodata2 = UrlFetchApp.fetch("https://transit.yahoo.co.jp/traininfo/detail/120/0/").getContentText();
+  if(yahoodata2.indexOf('現在､事故･遅延に関する情報はありません') > -1){
+    // match the word
+  }else{    
+    //get error info
+    var yahoodatastart2 = yahoodata2.indexOf('og:description" content="');
+    //4 japanese word only
+    yahoodatastart2 += 25;
+    var yahoodataend2 = yahoodata2.indexOf('の情報です。');
+    var yahoodataoutput2 = yahoodata2.substring(yahoodatastart2, yahoodataend2);
+
+    postMessage("\n" + "◆京急本線 " + date + yahoodataoutput2 + "\n",'your web hook');
+
+  }
+
+
+}
+
+
+function postMessage(message, hookPoint){
+  var payload = {
+    "text": message,
+  }
+  var options = {
+    "method": "POST",
+    "payload": JSON.stringify(payload),
+    "headers": {
+      "Content-type": "application/json",
+    }
+  }
+    var response = UrlFetchApp.fetch(hookPoint, options);
+
+  if (response.getResponseCode() == 200) {
+    return response;
+  }
+  return false;
+} 
